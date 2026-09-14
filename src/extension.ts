@@ -1,46 +1,13 @@
-import axios from "axios";
-import * as fs from "fs";
-import * as path from "path";
 import * as vscode from "vscode";
+import axios from "axios";
+import * as dotenv from "dotenv";
+import * as path from "path";
 
-function getGeminiApiKey(context: vscode.ExtensionContext): string | undefined {
-  // 1. Check process.env
-  if (process.env.GEMINI_API_KEY) {
-    return process.env.GEMINI_API_KEY;
-  }
+// .env file load
+dotenv.config({ path: path.join(__dirname, "../.env") });
 
-  // 2. Check .env file in extension directory
-  const envPath = path.join(context.extensionPath, ".env");
-  if (fs.existsSync(envPath)) {
-    try {
-      const content = fs.readFileSync(envPath, "utf-8");
-      for (const line of content.split(/\r?\n/)) {
-        const trimmed = line.trim();
-        if (trimmed && !trimmed.startsWith("#")) {
-          const [key, ...val] = trimmed.split("=");
-          if (key.trim() === "GEMINI_API_KEY") {
-            return val
-              .join("=")
-              .trim()
-              .replace(/^["'](.*)["']$/, "$1");
-          }
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  // 3. Check VS Code settings configuration
-  const configKey = vscode.workspace
-    .getConfiguration("dioode")
-    .get<string>("apiKey");
-  if (configKey) {
-    return configKey;
-  }
-
-  return undefined;
-}
+// Gemini api key from .env
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "dioode" is now active!');
@@ -84,17 +51,9 @@ export function activate(context: vscode.ExtensionContext) {
               // user prompt create
               const fullPrompt = `${userPrompt}\n\nHere is the code:\n\`\`\`\n${selectedText}\n\`\`\``;
 
-              const apiKey = getGeminiApiKey(context);
-              if (!apiKey) {
-                vscode.window.showErrorMessage(
-                  "Diode AI Error: GEMINI_API_KEY is not configured! Please set it in .env or settings.",
-                );
-                return;
-              }
-
               // gmeini api call
               const response = await axios.post(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`,
                 {
                   contents: [{ parts: [{ text: fullPrompt }] }],
                 },
