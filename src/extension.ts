@@ -25,6 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       // Receive selected text
+      const selection = editor.selection;
       const selectedText = editor.document.getText(editor.selection);
 
       if (!selectedText) {
@@ -77,12 +78,25 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
               }
 
-              // reply on a new output channel
-              const outputChannel =
-                vscode.window.createOutputChannel("Dioode AI Output");
-              outputChannel.show(true); // open with focus
-              outputChannel.appendLine("=== Dioode Response ===\n");
-              outputChannel.appendLine(replyText);
+              // quick pick menu
+              const action = await vscode.window.showQuickPick(
+                ["View in Output Channel", "Replace Selected Code in Editor"],
+                { placeHolder: "How do you want to handle the response?" },
+              );
+
+              if (action === "Replace Selected Code in Editor") {
+                // edit on editor
+				editor.edit((editBuilder) => {
+                  editBuilder.replace(selection, replyText);
+                });
+              } else {
+                // reply on a new output channel
+                const outputChannel =
+                  vscode.window.createOutputChannel("Dioode AI Output");
+                outputChannel.show(true); // open with focus
+                outputChannel.appendLine("=== Dioode Response ===\n");
+                outputChannel.appendLine(replyText);
+              }
             } catch (error: any) {
               // আসল এরর মেসেজটি বের করা
               const errorMessage =
@@ -91,7 +105,9 @@ export function activate(context: vscode.ExtensionContext) {
                 "Unknown error";
 
               // আসল এরর মেসেজ নোটিফিকেশনে দেখানো
-              vscode.window.showErrorMessage(`Dioode AI Error: ${errorMessage}`);
+              vscode.window.showErrorMessage(
+                `Dioode AI Error: ${errorMessage}`,
+              );
               console.error("Full Error Object:", error);
             }
           },
