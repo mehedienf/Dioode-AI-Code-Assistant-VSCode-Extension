@@ -1,7 +1,7 @@
-import * as vscode from "vscode";
 import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
+import * as vscode from "vscode";
 
 function getGeminiApiKey(context: vscode.ExtensionContext): string | undefined {
   // 1. Check process.env
@@ -19,7 +19,10 @@ function getGeminiApiKey(context: vscode.ExtensionContext): string | undefined {
         if (trimmed && !trimmed.startsWith("#")) {
           const [key, ...val] = trimmed.split("=");
           if (key.trim() === "GEMINI_API_KEY") {
-            return val.join("=").trim().replace(/^["'](.*)["']$/, "$1");
+            return val
+              .join("=")
+              .trim()
+              .replace(/^["'](.*)["']$/, "$1");
           }
         }
       }
@@ -84,7 +87,7 @@ export function activate(context: vscode.ExtensionContext) {
               const apiKey = getGeminiApiKey(context);
               if (!apiKey) {
                 vscode.window.showErrorMessage(
-                  "Diode AI Error: GEMINI_API_KEY is not configured! Please set it in .env or settings."
+                  "Diode AI Error: GEMINI_API_KEY is not configured! Please set it in .env or settings.",
                 );
                 return;
               }
