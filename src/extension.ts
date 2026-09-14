@@ -1,7 +1,7 @@
-import * as vscode from "vscode";
 import axios from "axios";
 import * as dotenv from "dotenv";
 import * as path from "path";
+import * as vscode from "vscode";
 
 // .env file load
 dotenv.config({ path: path.join(__dirname, "../.env") });
@@ -43,31 +43,45 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: "Diode is thinking...",
+            title: "Dioode is thinking...",
             cancellable: false,
           },
           async (progress) => {
             try {
               // user prompt create
-              const fullPrompt = `${userPrompt}\n\nHere is the code:\n\`\`\`\n${selectedText}\n\`\`\``;
+              const fullPrompt = `${userPrompt}\n(Note: Keep the answer concise and brief.)\n\nHere is the code:\n\`\`\`\n${selectedText}\n\`\`\``;
 
               // gmeini api call
               const response = await axios.post(
                 `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`,
                 {
                   contents: [{ parts: [{ text: fullPrompt }] }],
+                  generationConfig: {
+                    maxOutputTokens: 1000,
+                  },
                 },
               );
 
               // collect response text
               const replyText =
-                response.data.candidates[0].content.parts[0].text;
+                response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+              if (!replyText) {
+                const finishReason =
+                  response.data?.candidates?.[0]?.finishReason ||
+                  "No response received";
+                vscode.window.showWarningMessage(
+                  `Dioode AI: No text returned! Reason: ${finishReason}`,
+                );
+                console.log("Full Gemini Response:", response.data);
+                return;
+              }
 
               // reply on a new output channel
               const outputChannel =
-                vscode.window.createOutputChannel("Diode AI Output");
+                vscode.window.createOutputChannel("Dioode AI Output");
               outputChannel.show(true); // open with focus
-              outputChannel.appendLine("=== Diode Response ===\n");
+              outputChannel.appendLine("=== Dioode Response ===\n");
               outputChannel.appendLine(replyText);
             } catch (error: any) {
               // আসল এরর মেসেজটি বের করা
@@ -77,7 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
                 "Unknown error";
 
               // আসল এরর মেসেজ নোটিফিকেশনে দেখানো
-              vscode.window.showErrorMessage(`Diode AI Error: ${errorMessage}`);
+              vscode.window.showErrorMessage(`Dioode AI Error: ${errorMessage}`);
               console.error("Full Error Object:", error);
             }
           },
